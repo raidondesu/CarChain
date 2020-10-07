@@ -1,13 +1,13 @@
 import hashlib
 import json
 from urllib.parse import urlparse
+from CSV import CSV
 
 class Blockchain:
     
     def __init__(self):
-        
-        self.chain = []
-        self.nodes = set()
+
+        self.csv_operator = CSV()
         
     def get_hash(self, block):
         
@@ -174,8 +174,7 @@ class Blockchain:
         
     def add_node(self, address): 
         
-        parsed_url = urlparse(address)
-        self.nodes.add(parsed_url.netloc)
+        pass
         
         
     def replace_chain(self): 
