@@ -2,6 +2,7 @@ import hashlib
 import json
 from urllib.parse import urlparse
 from CSV import CSV
+from DBConnect import DBConnect
 
 class Blockchain:
     
@@ -13,10 +14,6 @@ class Blockchain:
         
         encoded_block = json.dumps(block, sort_keys = True).encode()
         return hashlib.sha256(encoded_block).hexdigest()
-        
-    def get_last_block(self):
-        
-        return self.chain[-1]
 
     def proof_of_work(self, previous_nonce):
         new_nonce = 1
@@ -30,13 +27,8 @@ class Blockchain:
         return new_nonce
     
     def chain_is_valid(self):
-        
-        index = 1
-        
-        while index < len(chain):
-            
-            previous_block = self.chain[index-1]
-            current_block = self.chain[index]
+
+        for previous_block, current_block in self.csv_operator.read_chain():
             
             if self.get_hash(previous_block) != current_block["hash"]["block"]:
                 
@@ -44,10 +36,9 @@ class Blockchain:
             
             hash_operation = hashlib.sha256(str(current_block["nonce"]**2 - previous_block["nonce"]**2).encode()).hexdigest()
             if hash_operation[:4] != '0000':
+
                 return False
-            
-            index += 1
-        
+           
         return True
     
     def add_genesis_block(self):
@@ -58,15 +49,13 @@ class Blockchain:
                  "hash": {"block":"None","car":"None"}, 
                  "details": {"block_type":"None"}}    
         self.chain.append(block)
-                    
-    
-            
+                        
     def mine_block(self, block_type, block_data):
         
         client = DBConnect()
         
-        last_block = self.get_last_block()
-        _id = len(self.chain)
+        last_block = self.csv_operator.get_last_block()
+        _id = self.csv_operator.get_chain_length()
         car_id = block_data[0]
         nonce = self.proof_of_work(last_block["nonce"])
         last_hash_block = self.get_hash(last_block)
@@ -82,7 +71,6 @@ class Blockchain:
                      "details": {"block_type":"Production"}     
             }
             
-        
         elif block_type == "NewRegister":
             
             block = {"_id":_id,
@@ -94,7 +82,6 @@ class Blockchain:
                                 } 
                     }
                                  
-        
         elif block_type == "Repair":
             
             last_car_entry = client.get_car_history(car_id)[-1]
@@ -109,7 +96,6 @@ class Blockchain:
                                 } 
                     }
          
-        
         elif block_type == "Sale":
             
             last_car_entry = client.get_car_history(car_id)[-1]
@@ -122,14 +108,13 @@ class Blockchain:
                               "car":last_hash_car},
                      "details": {"block_type": "Sale"}  
                     }
-                            
-                                                    
+                                                                     
         else:
         
             return "wrong input"
         
         client.ingest_block(block)
-        self.chain.append(block)
+        self.csv_operator.add_block(block)
         
           
     def car_history_is_valid(self,car_id):
@@ -172,11 +157,6 @@ class Blockchain:
             
             return False
         
-    def add_node(self, address): 
-        
-        pass
-        
-        
     def replace_chain(self): 
         
         longest_chain = None
@@ -195,4 +175,8 @@ class Blockchain:
             return True
         return False
             
+
+
+test = Blockchain()
+test.mine_block("Sale", ["1111"])
         

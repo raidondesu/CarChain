@@ -19,8 +19,9 @@ class CSV:
     def add_block(self, block):
 
         with open("storage/blockchain.csv", 'a+', newline='') as blockchain:
-            fieldnames = ["_id","car_id","nonce","hash","details"]
+            fieldnames = ["_id","car_id","nonce","car_hash","block_hash","details"]
             csv_writer = csv.DictWriter(blockchain, fieldnames=fieldnames)
+            csv_writer.writeheader()
             csv_writer.writerow(block)
 
 
@@ -34,22 +35,35 @@ class CSV:
     def read_chain(self):
 
         """
-        generator to go through blockchain and compare the hash of each row
-        to the hash stored in the next row
+        generator to go through blockchain and return consecutive blocks
+        """
+
+        with open("storage/blockchain.csv") as blockchain1:
+
+            with open("storage/blockchain.csv") as blockchain2:
+
+                previous_blocks = csv.DictReader(blockchain1)
+                current_blocks = csv.DictReader(blockchain2)
+                next(current_blocks)
+
+                for previous_block, current_block in zip(previous_blocks, current_blocks):
+        	        yield dict(previous_block), dict(current_block)
+
+    def get_last_block(self):
+
+        """
+        this should be done in a more efficent way
         """
 
         with open("storage/blockchain.csv") as blockchain:
 
             csv_reader = csv.DictReader(blockchain)
-            for row in csv_reader:
-                yield row
+        
+            for _ in range(1,self.get_chain_length()):
 
-    def get_last_block(self):
+                next(csv_reader)
 
-
-        with open("storage/blockchain.csv") as blockchain:
-
-            return dict([row for row in csv.DictReader(blockchain)][-1])
+            return dict([row for row in csv_reader][0])
         
 
     def read_adresses(self):
@@ -74,18 +88,15 @@ class CSV:
             return sum(1 for row in csv_reader)
 
 
-
 block = {"_id":0, 
         "car_id":"None",
         "nonce":0,
-        "hash": {"block":"None","car":"None"}, 
-        "details": {"Sale":"None"}}
+        "car_hash":"None",
+        "block_hash":"None",
+        "details": "Sale "}  
 
 test = CSV()
 test.add_block(block)
-print(test.get_last_block())
-print(test.get_chain_length())
-
 
 
 
